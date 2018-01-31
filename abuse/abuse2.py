@@ -1,7 +1,5 @@
 from pyspark.sql.functions import udf
-#from nltk import ngrams
 import re
-#os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.0.2 pyspark-shell'
 #    Spark
 from elasticsearch import Elasticsearch, helpers
 from pyspark import SparkContext
@@ -20,30 +18,31 @@ sc.setLogLevel("WARN")
 spark = SparkSession.builder.appName("PythonSparkStreaming").master("local").getOrCreate()
 ssc = StreamingContext(sc, 1)
 topics="twitter_stream"
-#brokers = "ec2-34-200-59-99.compute-1.amazonaws.com:9092"
-brokers = "ec2-34-193-231-31.compute-1.amazonaws.com:9092,ec2-34-200-59-99.compute-1.amazonaws.com:9092"
-words=["fuck","fucker","faggot","son of a bitch","nigger","nigga","twat","wanker","pussy","ass","bitch","cock sucker","dick","asshole","cunt"]
-#,'ec2-52-1-22-69.compute-1.amazonaws.com','ec2-34-193-231-31.compute-1.amazonaws.com','ec2-34-206-51-182.compute-1.amazonaws.com']
+brokers = "broker1_ip,broker2_ip,broker3_ip,broker4_ip"
+
+words=["fuck you","fuck","fucker","faggot","son of a bitch","nigger","nigga","twat","wanker","pussy","ass","bitch","cock sucker","dick","asshole","cunt"]
+
 
 #----------------Elasticsearch------------------------------------
 es_access_key = os.getenv('ES_ACCESS_KEY_ID', 'default')
 es_secret_access_key = os.getenv('ES_SECRET_ACCESS_KEY', 'default')
-master_internal_ip = "ec2-34-234-206-149.compute-1.amazonaws.com"
+master_internal_ip = "master_ip"
 
-
+#-----------------conncting to elasticsearch--------------------
 try:
     es = Elasticsearch(
         [master_internal_ip],
-        http_auth=('elastic', 'changeme'),
+        http_auth=('user', 'password'),
         port=9200,
         sniff_on_start=True
     )
-    #logging.debug("Elasticsearch Connected")
+
     print 'connected'
 except Exception as ex:
-    #logging.debug("Error:", ex)
     print 'error'
-    #return
+
+#--------------------creating/ accessing the index----------------------------
+
 try:
     if not es.indices.exists(index="tweet_abuse"):
 	es.indices.create(index = "tweet_abuse", body={"mappings":          \
@@ -61,7 +60,7 @@ except Exception as ex:
     print ex
 
 
-#------------------------------------------------------
+#------------------------------------------------------Stream Processing-------------------
 
 
 kafkaStream = KafkaUtils.createDirectStream(ssc, [topics],{"metadata.broker.list":brokers}  )
@@ -70,12 +69,8 @@ parsed = kafkaStream.map(lambda v: json.loads(v[1]))
 
 parsed.count().map(lambda x:'Tweets in this batch: %s' % x).pprint() 
 
-#parsed.map(lambda x : (x['id'],x['text'].encode('utf8'))).pprint()
-
 temp=parsed.map(lambda x : (x['id'],x['text'].encode('utf8')))
 
-#temp.pprint()
-#temp.map(lambda x:x[1]).pprint()
 
 
 def  test(x):
@@ -96,6 +91,8 @@ def  test(x):
 temp3=temp.map(lambda x:test(x))
 temp3.pprint()
 
+
+
 def data_json(x):
     t=x.collect()
     print t
@@ -105,19 +102,7 @@ def data_json(x):
 	print ex
 temp3.foreachRDD(data_json)
 
-#temp=parsed.map(lambda tweet: tweet.encode('utf8'))
 
-#temp.map(lambda x:x).pprint()
-
-"""
-
-
-
-
-
-"""
-
-#ssc = StreamingContext.getOrCreate('/tmp/checkpoint_v01',lambda: createContext())  
 ssc.start()  
 ssc.awaitTermination()
 
