@@ -21,14 +21,14 @@ sc.setLogLevel("WARN")
 spark = SparkSession.builder.appName("PythonSparkStreaming").master("local").getOrCreate()
 ssc = StreamingContext(sc, 1)
 topics="twitter_stream"
-#brokers = "ec2-34-200-59-99.compute-1.amazonaws.com:9092"
-brokers = "ec2-34-193-231-31.compute-1.amazonaws.com:9092,ec2-34-200-59-99.compute-1.amazonaws.com:9092"
-#,'ec2-52-1-22-69.compute-1.amazonaws.com','ec2-34-193-231-31.compute-1.amazonaws.com','ec2-34-206-51-182.compute-1.amazonaws.com']
+
+brokers = "ec2-ip.compute-1.amazonaws.com:9092,ec2-ip.compute-1.amazonaws.com:9092"
+#,'ec2-ip.compute-1.amazonaws.com','ec2-ip.compute-1.amazonaws.com','ec2-ip.compute-1.amazonaws.com']
 
 #----------------Elasticsearch------------------------------------
 es_access_key = os.getenv('ES_ACCESS_KEY_ID', 'default')
 es_secret_access_key = os.getenv('ES_SECRET_ACCESS_KEY', 'default')
-master_internal_ip = "ec2-34-234-206-149.compute-1.amazonaws.com"
+master_internal_ip = "ec2-ip.compute-1.amazonaws.com"
 
 
 try:
@@ -43,7 +43,7 @@ try:
 except Exception as ex:
     #logging.debug("Error:", ex)
     print 'error'
-    #return
+
 try:
     if not es.indices.exists(index="initial"):
 	es.indices.create(index = "tweet", body={"mappings":          \
@@ -69,7 +69,7 @@ parsed = kafkaStream.map(lambda v: json.loads(v[1]))
 
 parsed.count().map(lambda x:'Tweets in this batch: %s' % x).pprint() 
 
-#parsed.map(lambda x : x).pprint()
+
 temp=parsed.map(lambda tweet: tweet.encode('utf8'))
 
 
@@ -94,7 +94,7 @@ def ngrams(x):
 
 three=twogram.map(lambda x:ngrams(x))
    
-#three.pprint()
+
 data = []
 
 def to_json(x):
@@ -105,41 +105,29 @@ def to_json(x):
 	        data_json.append(p)
 		#data.append(p)
 	    except:
-		{}#print 'hey'
+		{}
     return data_json
 t1=three.map(lambda x:to_json(x))
 """
 """
 def data_json(x):
     t=x.collect()
-    #print t
+
     print '-------------------------------'
-    #for i in t:
-	#for j in i:
-	    #data.append(j)
+
     try:
         helpers.bulk(es,t)
     except:
 	print 'cant index'
-    #print data
-#t2.foreachRDD(data_json)
+
 
 t2=t1.flatMap(lambda x :x)
 t2.foreachRDD(data_json)
-#t2.pprint() 
-
-#t2.collect()
-
-
-#t1.pprint()
-
-#newt1=t1.flatmap(lambda x : return(x))
-#print newt1
 
 
 
 
-#ssc = StreamingContext.getOrCreate('/tmp/checkpoint_v01',lambda: createContext())  
+ 
 ssc.start()  
 ssc.awaitTermination()
 
