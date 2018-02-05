@@ -12,7 +12,7 @@ Text Prediction:
 
 PIPELINE:
 
-![alt text][https://github.com/ann05/NLP_Data_Pipeline/blob/master/pipeline.PNG]
+![alt text](https://github.com/ann05/NLP_Data_Pipeline/blob/master/pipeline.PNG)
 
 
 
