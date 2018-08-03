@@ -69,7 +69,7 @@ parsed = kafkaStream.map(lambda v: json.loads(v[1]))
 
 parsed.count().map(lambda x:'Tweets in this batch: %s' % x).pprint() 
 
-temp=parsed.map(lambda x : (x['id'],x['text'].encode('utf8')))
+dstream=parsed.map(lambda x : (x['id'],x['text'].encode('utf8')))
 
 
 
@@ -88,8 +88,8 @@ def  test(x):
     except:
         print  "error"
     return(x)
-temp3=temp.map(lambda x:test(x))
-temp3.pprint()
+dstream3=dstream.map(lambda x:test(x))
+dstream3.pprint()
 
 
 
@@ -100,7 +100,7 @@ def data_json(x):
 	helpers.bulk(es,t)
     except Exception as ex:
 	print ex
-temp3.foreachRDD(data_json)
+dstream3.foreachRDD(data_json)
 
 
 ssc.start()  
